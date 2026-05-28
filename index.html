@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RGB Mosaic Generator</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #f4f1ec;
+            --surface: #faf8f4;
+            --border: #d6cfc4;
+            --text: #1a1814;
+            --muted: #7a7269;
+            --accent: #c0392b;
+            --accent2: #2c7a4b;
+            --accent3: #1a4a8a;
+            --radius: 6px;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 32px 20px 64px;
+        }
+
+        header {
+            max-width: 820px;
+            margin: 0 auto 40px;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            font-weight: normal;
+            letter-spacing: -0.5px;
+            margin-bottom: 4px;
+        }
+
+        header h1 em {
+            font-style: normal;
+            color: var(--accent);
+        }
+
+        header p.sub {
+            font-size: 0.875rem;
+            color: var(--muted);
+            font-family: 'Courier New', monospace;
+        }
+
+        .attribution {
+            margin-top: 8px;
+            font-size: 0.78rem;
+            color: var(--muted);
+            border-left: 2px solid var(--border);
+            padding-left: 10px;
+            line-height: 1.5;
+        }
+
+        .attribution strong {
+            color: var(--text);
+        }
+
+        .layout {
+            max-width: 820px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .main-col {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px 20px;
+        }
+
+        .panel-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--muted);
+            margin-bottom: 14px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .upload-zone {
+            border: 1.5px dashed var(--border);
+            border-radius: var(--radius);
+            padding: 14px 12px;
+            text-align: center;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.15s, border-color 0.15s;
+            margin-bottom: 8px;
+        }
+
+        .upload-zone:last-child {
+            margin-bottom: 0;
+        }
+
+        .upload-zone:hover {
+            background: #f0ece4;
+        }
+
+        .upload-zone input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+
+        .upload-zone .dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 7px;
+            vertical-align: middle;
+            margin-top: -2px;
+        }
+
+        .dot-r {
+            background: #c0392b;
+        }
+
+        .dot-g {
+            background: #27ae60;
+        }
+
+        .dot-b {
+            background: #2980b9;
+        }
+
+        .upload-zone .uz-label {
+            font-size: 0.85rem;
+            font-family: 'Courier New', monospace;
+        }
+
+        .upload-zone .uz-count {
+            display: block;
+            font-size: 0.74rem;
+            color: var(--muted);
+            margin-top: 3px;
+        }
+
+        .upload-zone.loaded {
+            border-style: solid;
+        }
+
+        .upload-zone.loaded-r {
+            border-color: #c0392b;
+        }
+
+        .upload-zone.loaded-g {
+            border-color: #27ae60;
+        }
+
+        .upload-zone.loaded-b {
+            border-color: #2980b9;
+        }
+
+        .main-drop {
+            border: 1.5px dashed var(--border);
+            border-radius: var(--radius);
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.15s;
+            overflow: hidden;
+        }
+
+        .main-drop:hover {
+            background: #f0ece4;
+        }
+
+        .main-drop input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+
+        .main-drop-inner {
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .main-drop-inner .icon {
+            font-size: 2rem;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .main-drop-inner p {
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+
+        .main-drop img.thumb {
+            max-height: 180px;
+            max-width: 100%;
+            border-radius: 3px;
+            pointer-events: none;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .main-drop .change-hint {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(26, 24, 20, 0.55);
+            color: #fff;
+            font-size: 0.75rem;
+            text-align: center;
+            padding: 4px;
+            opacity: 0;
+            transition: opacity 0.15s;
+            font-family: 'Courier New', monospace;
+        }
+
+        .main-drop:hover .change-hint {
+            opacity: 1;
+        }
+
+        .slider-block {
+            margin-bottom: 14px;
+        }
+
+        .slider-block:last-child {
+            margin-bottom: 0;
+        }
+
+        .slider-block label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            margin-bottom: 5px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .slider-block label .val {
+            color: var(--accent3);
+            font-weight: bold;
+        }
+
+        .slider-block .info {
+            font-size: 0.72rem;
+            color: var(--muted);
+            margin-top: 3px;
+            font-family: 'Courier New', monospace;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 3px;
+            accent-color: var(--text);
+            cursor: pointer;
+        }
+
+        .divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 14px 0;
+        }
+
+        .tint-section .tint-row {
+            margin-bottom: 12px;
+        }
+
+        .tint-section .tint-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .tint-row label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.78rem;
+            margin-bottom: 4px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .tint-r label,
+        .tint-r .val {
+            color: #c0392b;
+        }
+
+        .tint-g label,
+        .tint-g .val {
+            color: #27ae60;
+        }
+
+        .tint-b label,
+        .tint-b .val {
+            color: #2980b9;
+        }
+
+        .tint-r input[type="range"] {
+            accent-color: #c0392b;
+        }
+
+        .tint-g input[type="range"] {
+            accent-color: #27ae60;
+        }
+
+        .tint-b input[type="range"] {
+            accent-color: #2980b9;
+        }
+
+        .btn-generate {
+            width: 100%;
+            padding: 13px 20px;
+            background: var(--text);
+            color: var(--bg);
+            border: none;
+            border-radius: var(--radius);
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background 0.15s;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-generate:hover:not(:disabled) {
+            background: #333;
+        }
+
+        .btn-generate:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .btn-stop {
+            width: 100%;
+            padding: 13px 20px;
+            background: var(--accent);
+            color: var(--bg);
+            border: none;
+            border-radius: var(--radius);
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background 0.15s;
+            letter-spacing: 0.5px;
+            display: none;
+            margin-top: 10px;
+        }
+
+        .btn-stop:hover {
+            background: #a02d24;
+        }
+
+        .btn-stop.active {
+            display: block;
+        }
+
+        .btn-download {
+            width: 100%;
+            padding: 10px 20px;
+            background: transparent;
+            color: var(--text);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius);
+            font-family: 'Courier New', monospace;
+            font-size: 0.82rem;
+            cursor: pointer;
+            transition: border-color 0.15s, background 0.15s;
+            margin-top: 10px;
+        }
+
+        .btn-download:hover {
+            background: #f0ece4;
+            border-color: var(--text);
+        }
+
+        .progress-wrap {
+            margin-bottom: 12px;
+            display: none;
+        }
+
+        .progress-track {
+            background: var(--border);
+            border-radius: 100px;
+            height: 3px;
+            overflow: hidden;
+            margin-bottom: 5px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--text);
+            border-radius: 100px;
+            transition: width 0.08s linear;
+            width: 0%;
+        }
+
+        .progress-text {
+            font-size: 0.74rem;
+            color: var(--muted);
+            font-family: 'Courier New', monospace;
+        }
+
+        .output-panel {
+            display: none;
+        }
+
+        .output-meta {
+            font-size: 0.74rem;
+            color: var(--muted);
+            font-family: 'Courier New', monospace;
+            margin-bottom: 10px;
+        }
+
+        .output-wrapper {
+            position: relative;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: #111;
+            overflow: hidden;
+        }
+
+        #output-canvas {
+            display: block;
+            max-width: 100%;
+            height: auto;
+            image-rendering: pixelated;
+        }
+
+        .render-overlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0;
+            animation: renderScan 0.8s linear infinite;
+            background: repeating-linear-gradient(0deg,
+                    rgba(255, 255, 255, 0.05) 0px,
+                    rgba(255, 255, 255, 0.05) 2px,
+                    transparent 2px,
+                    transparent 4px);
+        }
+
+        @keyframes renderScan {
+            0% {
+                box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.1);
+            }
+
+            50% {
+                box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.3);
+            }
+
+            100% {
+                box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.1);
+            }
+        }
+
+        .render-overlay.active {
+            opacity: 1;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .readiness {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-bottom: 14px;
+        }
+
+        .readiness-item {
+            font-size: 0.76rem;
+            font-family: 'Courier New', monospace;
+            color: var(--muted);
+        }
+
+        .readiness-item.ok {
+            color: var(--text);
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--border);
+            margin-right: 6px;
+            vertical-align: middle;
+            margin-top: -2px;
+            transition: background 0.3s;
+        }
+
+        .status-dot.ready {
+            background: #27ae60;
+        }
+
+        @media (max-width: 660px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>RGB <em>Mosaic</em> Generator</h1>
+        <p class="sub">pixel → subpixel tile mapping (R | G | B)</p>
+        <div class="attribution">
+            Developed by <strong>Stefan Rau</strong> &mdash; HSG KreativKomplizen,
+            Ulm University
+        </div>
+    </header>
+
+    <div class="layout">
+
+        <div class="sidebar">
+
+            <div class="panel">
+                <div class="panel-title">01 — Tile Image Sets</div>
+
+                <div class="upload-zone" id="zone-r">
+                    <input type="file" id="input-red" accept="image/*" multiple />
+                    <span class="dot dot-r"></span>
+                    <span class="uz-label">RED tiles</span>
+                    <span class="uz-count" id="count-red">no images</span>
+                </div>
+
+                <div class="upload-zone" id="zone-g">
+                    <input type="file" id="input-green" accept="image/*" multiple />
+                    <span class="dot dot-g"></span>
+                    <span class="uz-label">GREEN tiles</span>
+                    <span class="uz-count" id="count-green">no images</span>
+                </div>
+
+                <div class="upload-zone" id="zone-b">
+                    <input type="file" id="input-blue" accept="image/*" multiple />
+                    <span class="dot dot-b"></span>
+                    <span class="uz-label">BLUE tiles</span>
+                    <span class="uz-count" id="count-blue">no images</span>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">02 — Source Image</div>
+                <div class="main-drop" id="main-drop">
+                    <input type="file" id="input-main" accept="image/*" />
+                    <div class="main-drop-inner" id="main-drop-inner">
+                        <span class="icon">↑</span>
+                        <p>drop image here<br />or click to browse</p>
+                    </div>
+                    <div class="change-hint">click to change</div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">03 — Settings</div>
+
+                <div class="slider-block">
+                    <label>Pixel size <span class="val" id="v-pixel">100</span>px</label>
+                    <input type="range" id="pixel-size" min="4" max="512" value="100" step="4" />
+                    <div class="info" id="info-pixel">adjust based on source</div>
+                </div>
+
+                <div class="slider-block">
+                    <label>Tile size <span class="val" id="v-tile">12</span>px</label>
+                    <input type="range" id="tile-size" min="6" max="48" value="12" step="1" />
+                    <div class="info" id="info-tile">adjust to limit output</div>
+                </div>
+
+                <div class="slider-block">
+                    <label>Texture blend <span class="val" id="v-blend">30</span>%</label>
+                    <input type="range" id="blend-texture" min="0" max="100" value="30" step="1" />
+                </div>
+
+                <hr class="divider" />
+
+                <div class="tint-section">
+                    <div class="tint-row tint-r">
+                        <label>Red tint <span class="val" id="v-br">50</span>%</label>
+                        <input type="range" id="boost-red" min="0" max="100" value="50" />
+                    </div>
+                    <div class="tint-row tint-g">
+                        <label>Green tint <span class="val" id="v-bg">50</span>%</label>
+                        <input type="range" id="boost-green" min="0" max="100" value="50" />
+                    </div>
+                    <div class="tint-row tint-b">
+                        <label>Blue tint <span class="val" id="v-bb">50</span>%</label>
+                        <input type="range" id="boost-blue" min="0" max="100" value="50" />
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="main-col">
+
+            <div class="panel">
+                <div class="panel-title">04 — Generate</div>
+
+                <div class="readiness">
+                    <div class="readiness-item" id="ri-red">
+                        <span class="status-dot" id="sd-red"></span>Red tiles
+                    </div>
+                    <div class="readiness-item" id="ri-green">
+                        <span class="status-dot" id="sd-green"></span>Green tiles
+                    </div>
+                    <div class="readiness-item" id="ri-blue">
+                        <span class="status-dot" id="sd-blue"></span>Blue tiles
+                    </div>
+                    <div class="readiness-item" id="ri-main">
+                        <span class="status-dot" id="sd-main"></span>Source image
+                    </div>
+                </div>
+
+                <div class="progress-wrap" id="progress-wrap">
+                    <div class="progress-track">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                    <div class="progress-text" id="progress-text">–</div>
+                </div>
+
+                <button class="btn-generate" id="btn-generate" disabled>
+                    Generate Mosaic
+                </button>
+                <button class="btn-stop" id="btn-stop">■ Stop Rendering</button>
+            </div>
+
+            <div class="panel output-panel" id="output-panel">
+                <div class="panel-title">05 — Result</div>
+                <div class="output-meta" id="output-meta">–</div>
+
+                <div class="output-wrapper hidden" id="output-wrapper">
+                    <canvas id="output-canvas"></canvas>
+                    <div class="render-overlay" id="render-overlay"></div>
+                </div>
+
+                <button class="btn-download hidden" id="btn-download">
+                    ↓ Download PNG
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const MAX_OUTPUT_RES = 16000;
+
+        const state = {
+            redImages: [],
+            greenImages: [],
+            blueImages: [],
+            mainImage: null,
+            rendering: false,
+            stopRequested: false,
+        };
+
+        // ── DOM ──────────────────────────────────────────────────────────────────
+        const outputCanvas = document.getElementById('output-canvas');
+        const outputPanel = document.getElementById('output-panel');
+        const outputMeta = document.getElementById('output-meta');
+        const outputWrapper = document.getElementById('output-wrapper');
+        const renderOverlay = document.getElementById('render-overlay');
+        const progressWrap = document.getElementById('progress-wrap');
+        const progressFill = document.getElementById('progress-fill');
+        const progressText = document.getElementById('progress-text');
+        const btnGenerate = document.getElementById('btn-generate');
+        const btnStop = document.getElementById('btn-stop');
+        const btnDownload = document.getElementById('btn-download');
+
+        const pixelSizeEl = document.getElementById('pixel-size');
+        const tileSizeEl = document.getElementById('tile-size');
+        const infoPxEl = document.getElementById('info-pixel');
+        const infoTileEl = document.getElementById('info-tile');
+
+        // ── Compute output size preview ──────────────────────────────────────────
+        function updateOutputPreview() {
+            if (!state.mainImage) return;
+
+            const pixelSize = +pixelSizeEl.value;
+            const tileSize = +tileSizeEl.value;
+
+            const srcW = state.mainImage.naturalWidth;
+            const srcH = state.mainImage.naturalHeight;
+
+            const cols = Math.max(1, Math.round(srcW / pixelSize));
+            const rows = Math.max(1, Math.round((cols * 3 * srcH) / srcW));
+
+            const outW = cols * 3 * tileSize;
+            const outH = rows * tileSize;
+
+            infoPxEl.textContent =
+                `${cols}×${rows} pixels`;
+            infoTileEl.textContent =
+                `Output image: ${outW}×${outH}px`;
+
+            if (outW > MAX_OUTPUT_RES || outH > MAX_OUTPUT_RES) {
+                infoTileEl.style.color = '#c0392b';
+            } else {
+                infoTileEl.style.color = 'var(--muted)';
+            }
+        }
+
+        // ── Adaptive slider ranges ───────────────────────────────────────────────
+        function updateSliderRanges() {
+            if (!state.mainImage) {
+                pixelSizeEl.min = 4;
+                pixelSizeEl.max = 512;
+                tileSizeEl.min = 6;
+                tileSizeEl.max = 48;
+                return;
+            }
+
+            const srcW = state.mainImage.naturalWidth;
+            const srcH = state.mainImage.naturalHeight;
+            const maxDim = Math.max(srcW, srcH);
+
+            // Pixel size: ~20% to ~100% of largest dimension
+            const minPixel = Math.max(4, Math.round(maxDim * 0.002));
+            const maxPixel = Math.round(maxDim * 0.1);
+            pixelSizeEl.min = minPixel;
+            pixelSizeEl.max = maxPixel;
+            pixelSizeEl.step = Math.max(1, Math.round((maxPixel - minPixel) / 100));
+
+            if (+pixelSizeEl.value < minPixel || +pixelSizeEl.value > maxPixel) {
+                pixelSizeEl.value = Math.round((minPixel + maxPixel) / 2);
+            }
+
+            // Tile size: calculated to fit max output
+            const cols = Math.max(1, Math.round(srcW / +pixelSizeEl.value));
+            const maxTile = Math.floor(MAX_OUTPUT_RES / (cols * 3));
+            tileSizeEl.min = 6;
+            tileSizeEl.max = Math.min(100, Math.max(6, maxTile));
+            tileSizeEl.step = 1;
+
+            if (+tileSizeEl.value > tileSizeEl.max) {
+                tileSizeEl.value = tileSizeEl.max;
+            }
+
+            updateOutputPreview();
+        }
+
+        // ── Slider wiring ────────────────────────────────────────────────────────
+        [
+            ['blend-texture', 'v-blend'],
+            ['boost-red', 'v-br'],
+            ['boost-green', 'v-bg'],
+            ['boost-blue', 'v-bb'],
+        ].forEach(([id, valId]) => {
+            const el = document.getElementById(id);
+            const val = document.getElementById(valId);
+            el.addEventListener('input', () => { val.textContent = el.value; });
+        });
+
+        pixelSizeEl.addEventListener('input', () => {
+            document.getElementById('v-pixel').textContent = pixelSizeEl.value;
+            updateOutputPreview();
+        });
+
+        tileSizeEl.addEventListener('input', () => {
+            document.getElementById('v-tile').textContent = tileSizeEl.value;
+            updateOutputPreview();
+        });
+
+        // ── Image loading helper ─────────────────────────────────────────────────
+        function loadImageFiles(files) {
+            return Promise.all(
+                Array.from(files).map(
+                    (f) => new Promise((res, rej) => {
+                        const img = new Image();
+                        img.onload = () => res(img);
+                        img.onerror = rej;
+                        img.src = URL.createObjectURL(f);
+                    })
+                )
+            );
+        }
+
+        // ── Readiness tracking ───────────────────────────────────────────────────
+        function updateReadiness() {
+            const checks = [
+                ['red', state.redImages.length > 0],
+                ['green', state.greenImages.length > 0],
+                ['blue', state.blueImages.length > 0],
+                ['main', state.mainImage !== null],
+            ];
+
+            let allReady = true;
+            checks.forEach(([key, ok]) => {
+                document.getElementById(`sd-${key}`).className =
+                    'status-dot' + (ok ? ' ready' : '');
+                document.getElementById(`ri-${key}`).className =
+                    'readiness-item' + (ok ? ' ok' : '');
+                if (!ok) allReady = false;
+            });
+
+            btnGenerate.disabled = !allReady || state.rendering;
+        }
+
+        updateReadiness();
+
+        // ── Tile uploads ─────────────────────────────────────────────────────────
+        [
+            ['red', 'zone-r', 'loaded-r'],
+            ['green', 'zone-g', 'loaded-g'],
+            ['blue', 'zone-b', 'loaded-b'],
+        ].forEach(([color, zoneId, loadedClass]) => {
+            document.getElementById(`input-${color}`).addEventListener('change', async (e) => {
+                const imgs = await loadImageFiles(e.target.files);
+                state[`${color}Images`] = imgs;
+                document.getElementById(`count-${color}`).textContent =
+                    `${imgs.length} image${imgs.length !== 1 ? 's' : ''} loaded`;
+                document.getElementById(zoneId).classList.add('loaded', loadedClass);
+                updateReadiness();
+            });
+        });
+
+        // ── Main image ───────────────────────────────────────────────────────────
+        document.getElementById('input-main').addEventListener('change', async (e) => {
+            if (e.target.files[0]) await loadMain(e.target.files[0]);
+        });
+
+        async function loadMain(file) {
+            const [img] = await loadImageFiles([file]);
+            state.mainImage = img;
+            document.getElementById('main-drop-inner').innerHTML =
+                `<img class="thumb" src="${img.src}" alt="source" />`;
+            updateSliderRanges();
+            updateReadiness();
+        }
+
+        // ── Generate ─────────────────────────────────────────────────────────────
+        btnGenerate.addEventListener('click', async () => {
+            if (!state.mainImage || state.rendering) return;
+
+            const pixelSize = +pixelSizeEl.value;
+            const tileSize = +tileSizeEl.value;
+            const boostR = +document.getElementById('boost-red').value / 100;
+            const boostG = +document.getElementById('boost-green').value / 100;
+            const boostB = +document.getElementById('boost-blue').value / 100;
+            const blendPct = +document.getElementById('blend-texture').value / 100;
+
+            // Check max output
+            const srcW = state.mainImage.naturalWidth;
+            const srcH = state.mainImage.naturalHeight;
+
+            const cols = Math.max(1, Math.round(srcW / pixelSize));
+            const rows = Math.max(1, Math.round((cols * 3 * srcH) / srcW));
+
+            const outW = cols * 3 * tileSize;
+            const outH = rows * tileSize;
+
+            if (outW > MAX_OUTPUT_RES || outH > MAX_OUTPUT_RES) {
+                alert(`Output size ${outW}×${outH}px exceeds max ${MAX_OUTPUT_RES}×${MAX_OUTPUT_RES}px.
+Reduce pixel size or tile size.`);
+                return;
+            }
+
+            state.rendering = true;
+            state.stopRequested = false;
+            updateReadiness();
+
+            outputCanvas.width = outW;
+            outputCanvas.height = outH;
+
+            outputPanel.style.display = 'flex';
+            outputPanel.style.flexDirection = 'column';
+            outputMeta.textContent =
+                `${cols}×${rows} pixels → ${cols * 3}×${rows} tiles → ${outW}×${outH}px`;
+
+            outputWrapper.classList.remove('hidden');
+            btnDownload.classList.add('hidden');
+            renderOverlay.classList.add('active');
+
+            btnGenerate.disabled = true;
+            btnStop.classList.add('active');
+            progressWrap.style.display = 'block';
+            progressFill.style.width = '0%';
+            progressText.textContent = 'Pre-scaling tiles…';
+
+            outputPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            await new Promise(r => setTimeout(r, 10));
+
+            // Pre-scale all tile images once
+            function preScale(images) {
+                return images.map(img => {
+                    const c = document.createElement('canvas');
+                    c.width = tileSize;
+                    c.height = tileSize;
+                    c.getContext('2d').drawImage(img, 0, 0, tileSize, tileSize);
+                    return c;
+                });
+            }
+
+            const cachedR = preScale(state.redImages);
+            const cachedG = preScale(state.greenImages);
+            const cachedB = preScale(state.blueImages);
+
+            // Downsample source to pixel grid
+            const small = document.createElement('canvas');
+            small.width = cols;
+            small.height = rows;
+            small.getContext('2d').drawImage(state.mainImage, 0, 0, cols, rows);
+            const imgData = small.getContext('2d').getImageData(0, 0, cols, rows).data;
+
+            const outCtx = outputCanvas.getContext('2d');
+            const total = cols * rows;
+            let done = 0;
+
+            progressText.textContent = 'Rendering…';
+
+            function randItem(arr) {
+                return arr[Math.floor(Math.random() * arr.length)];
+            }
+
+            function drawTile(canvas, destX, destY, tintColor, tintAlpha) {
+                outCtx.globalCompositeOperation = 'source-over';
+                outCtx.globalAlpha = 1;
+                outCtx.drawImage(canvas, destX, destY);
+                if (tintAlpha > 0.005) {
+                    outCtx.globalAlpha = tintAlpha;
+                    outCtx.fillStyle = tintColor;
+                    outCtx.fillRect(destX, destY, tileSize, tileSize);
+                    outCtx.globalAlpha = 1;
+                }
+            }
+
+            const BATCH = 500;
+
+            function processBatch() {
+                if (state.stopRequested) {
+                    state.rendering = false;
+                    state.stopRequested = false;
+                    btnGenerate.disabled = false;
+                    btnStop.classList.remove('active');
+                    progressWrap.style.display = 'none';
+                    renderOverlay.classList.remove('active');
+                    outputWrapper.classList.add('hidden');
+                    updateReadiness();
+                    return;
+                }
+
+                const end = Math.min(done + BATCH, total);
+
+                while (done < end) {
+                    const px = done % cols;
+                    const py = Math.floor(done / cols);
+                    const i = (py * cols + px) * 4;
+
+                    const r = imgData[i];
+                    const g = imgData[i + 1];
+                    const b = imgData[i + 2];
+
+                    const baseX = px * 3 * tileSize;
+                    const baseY = py * tileSize;
+
+                    drawTile(randItem(cachedR), baseX, baseY,
+                        '#ff0000', Math.min(1, (r / 255) * boostR));
+                    drawTile(randItem(cachedG), baseX + tileSize, baseY,
+                        '#00ff00', Math.min(1, (g / 255) * boostG));
+                    drawTile(randItem(cachedB), baseX + tileSize * 2, baseY,
+                        '#0000ff', Math.min(1, (b / 255) * boostB));
+
+                    done++;
+                }
+
+                const pct = Math.round((done / total) * 100);
+                progressFill.style.width = pct + '%';
+                progressText.textContent = `${pct}% — ${done} / ${total} pixels`;
+
+                if (done < total) {
+                    requestAnimationFrame(processBatch);
+                } else {
+                    // Texture blend overlay pass
+                    if (blendPct > 0) {
+                        outCtx.globalCompositeOperation = 'overlay';
+                        outCtx.globalAlpha = blendPct;
+                        outCtx.drawImage(state.mainImage, 0, 0, outW, outH);
+                        outCtx.globalAlpha = 1;
+                        outCtx.globalCompositeOperation = 'source-over';
+                    }
+
+                    progressText.textContent = 'Done.';
+                    state.rendering = false;
+                    btnGenerate.disabled = false;
+                    btnStop.classList.remove('active');
+                    renderOverlay.classList.remove('active');
+                    btnDownload.classList.remove('hidden');
+                    updateReadiness();
+                }
+            }
+
+            requestAnimationFrame(processBatch);
+        });
+
+        // ── Stop button ──────────────────────────────────────────────────────────
+        btnStop.addEventListener('click', () => {
+            if (state.rendering) {
+                state.stopRequested = true;
+            }
+        });
+
+        // ── Download ─────────────────────────────────────────────────────────────
+        btnDownload.addEventListener('click', () => {
+            const a = document.createElement('a');
+            a.download = 'rgb-mosaic.png';
+            a.href = outputCanvas.toDataURL('image/png');
+            a.click();
+        });
+    </script>
+</body>
+
+</html>
