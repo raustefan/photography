@@ -1,8 +1,8 @@
 import { sineState } from './sine-state.js';
 import { sineDom } from './sine-dom.js';
 
-const MAX_RENDER_WIDTH = 8000;
-const MAX_RENDER_HEIGHT = 12000;
+const MAX_RENDER_WIDTH = 24000;
+const MAX_RENDER_HEIGHT = 36000;
 const CHANNELS = ['C', 'M', 'Y', 'K'];
 const PHASE_OFFSETS = { C: 0, M: Math.PI / 2, Y: Math.PI, K: 3 * Math.PI / 2 };
 
@@ -29,8 +29,7 @@ function getSettings() {
     const cmyLineWidth = value('sine-cmy-width') || kLineWidth * 3;
     return {
         binSize: value('sine-bin-size'),
-        amplitudeScale: value('sine-amp-scale'),
-        amplitudeMultiplier: value('sine-amp-mult'),
+        amplitude: value('sine-amp'),
         pxPerCell: value('sine-px-per-cell'),
         samplesPerCell: value('sine-samples') || null,
         cmyLineWidth,
@@ -125,7 +124,7 @@ function clampBinSize(value, min, max) {
 function buildWavePoints(channel, coords, settings, renderPxPerCell, samplesPerCell, phaseOffset) {
     const points = [];
     const freq = settings.cyclesPerCell;
-    const totalAmplitude = settings.amplitudeScale * settings.amplitudeMultiplier;
+    const totalAmplitude = settings.amplitude;
 
     for (let i = 0; i < coords.length; i++) {
         const [row, col] = coords[i];
@@ -169,10 +168,10 @@ function compositeLayers(layers, width, height) {
     const imageData = new ImageData(width, height);
     const out = imageData.data;
     for (let i = 0; i < width * height; i++) {
-        const c = layers.C[i * 4] / 255;
-        const m = layers.M[i * 4] / 255;
-        const y = layers.Y[i * 4] / 255;
-        const k = layers.K[i * 4] / 255;
+        const c = layers.C ? layers.C[i * 4] / 255 : 0;
+        const m = layers.M ? layers.M[i * 4] / 255 : 0;
+        const y = layers.Y ? layers.Y[i * 4] / 255 : 0;
+        const k = layers.K ? layers.K[i * 4] / 255 : 0;
         out[i * 4] = Math.round(255 * (1 - c) * (1 - k));
         out[i * 4 + 1] = Math.round(255 * (1 - m) * (1 - k));
         out[i * 4 + 2] = Math.round(255 * (1 - y) * (1 - k));
@@ -204,8 +203,8 @@ export function updateSinePreview() {
     setText('sine-v-bin', settings.binSize);
     setText('sine-v-px', settings.pxPerCell);
     setText('sine-v-super', settings.supersample);
-    setText('sine-v-amp', settings.amplitudeScale.toFixed(2));
-    setText('sine-v-ampm', settings.amplitudeMultiplier.toFixed(2));
+    setText('sine-v-amp', settings.amplitude.toFixed(2));
+    setText('sine-v-freq', settings.cyclesPerCell.toFixed(1));
     setText('sine-v-samples', settings.samplesPerCell ?? 'auto');
     setText('sine-v-cmy', value('sine-cmy-width') || 'auto');
     setText('sine-v-k', settings.kLineWidth);
@@ -301,6 +300,15 @@ export async function runSineRender() {
         const lineWidth = (name === 'K' ? settings.kLineWidth : settings.cmyLineWidth) *
             settings.supersample;
         layers[name] = renderInkLayer(points, canvasW, canvasH, lineWidth);
+
+        // Progressively overlay the rendered layer on top of the output canvas
+        const partialResult = compositeLayers(layers, canvasW, canvasH);
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = canvasW;
+        tempCanvas.height = canvasH;
+        tempCanvas.getContext('2d').putImageData(partialResult, 0, 0);
+        resizeToOutput(tempCanvas, gridW * settings.pxPerCell, gridH * settings.pxPerCell);
+
         updateProgress(channelIndex + 2, 8, `Rendered ${name} ink`);
         await yieldToBrowser();
     }

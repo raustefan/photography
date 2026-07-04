@@ -190,7 +190,7 @@
                 <div class="main-drop" id="sine-drop">
                     <input type="file" id="sine-input-main" accept="image/*" />
                     <div class="main-drop-inner" id="sine-drop-inner">
-                        <span class="icon">~</span>
+                        <span class="icon">↑</span>
                         <p>drop image here<br />or click to browse</p>
                     </div>
                     <div class="change-hint">click to change</div>
@@ -206,28 +206,24 @@
                 </div>
                 <div class="slider-block">
                     <label>Px per cell <span><span class="val" id="sine-v-px">40</span>px</span></label>
-                    <input type="range" id="sine-px-per-cell" min="8" max="96" value="40" step="2" />
+                    <input type="range" id="sine-px-per-cell" min="8" max="288" value="40" step="2" />
                     <div class="info" id="sine-info-output">output estimate appears here</div>
                 </div>
                 <div class="slider-block">
                     <label>Supersample <span><span class="val" id="sine-v-super">2</span>x</span></label>
-                    <input type="range" id="sine-supersample" min="1" max="3" value="2" step="1" />
+                    <input type="range" id="sine-supersample" min="1" max="9" value="2" step="1" />
                 </div>
             </div>
 
             <div class="panel">
                 <div class="panel-title">03 - Wave</div>
                 <div class="slider-block">
-                    <label>Cycles per cell <span class="val" id="sine-v-freq">7.0</span></label>
-                    <input type="range" id="sine-freq" min="1" max="12" value="7" step="0.1" />
+                    <label>Frequency <span class="val" id="sine-v-freq">2.3</span></label>
+                    <input type="range" id="sine-freq" min="1" max="12" value="2.3" step="0.1" />
                 </div>
                 <div class="slider-block">
-                    <label>Amplitude scale <span class="val" id="sine-v-amp">0.9</span></label>
-                    <input type="range" id="sine-amp-scale" min="0" max="2" value="0.9" step="0.05" />
-                </div>
-                <div class="slider-block">
-                    <label>Amplitude multiplier <span class="val" id="sine-v-ampm">1.0</span></label>
-                    <input type="range" id="sine-amp-mult" min="0.1" max="3" value="1" step="0.05" />
+                    <label>Amplitude <span class="val" id="sine-v-amp">0.90</span></label>
+                    <input type="range" id="sine-amp" min="0" max="2" value="0.9" step="0.05" />
                 </div>
                 <div class="slider-block">
                     <label>Samples per cell <span class="val" id="sine-v-samples">auto</span></label>
