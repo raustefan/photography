@@ -3,6 +3,9 @@ import { wirePreviewSliders } from './preview.js';
 import { wireImageUploads } from './images.js';
 import { wirePreprocess } from './preprocess.js';
 import { wireRender } from './render.js';
+import { wireNavigation } from './navigation.js';
+import { wireSineImageUpload } from './sine-images.js';
+import { wireSineRender } from './sine-render.js';
 
 function wireTintSliders() {
     [
@@ -18,8 +21,11 @@ function wireTintSliders() {
 }
 
 wireTintSliders();
+wireNavigation();
 wirePreviewSliders();
 wireImageUploads();
 wirePreprocess();
 wireRender();
+wireSineImageUpload();
+wireSineRender();
 updateReadiness();

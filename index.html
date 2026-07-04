@@ -4,21 +4,32 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>RGB Mosaic Generator</title>
+    <title>Print Pattern Lab</title>
     <link rel="stylesheet" href="css/styles.css" />
 </head>
 
 <body>
 
     <header>
-        <h1>RGB <em>Mosaic</em> Generator</h1>
-        <p class="sub">pixel → subpixel tile mapping (R | G | B)</p>
+        <h1>Print <em>Pattern</em> Lab</h1>
+        <p class="sub" id="site-subtitle">pixel → subpixel tile mapping (R | G | B)</p>
         <div class="attribution">
-            Developed by <strong>Stefan Rau</strong> &mdash; HSG KreativKomplizen,
+            Developed by <strong>Stefan Rau</strong> - HSG KreativKomplizen,
             Ulm University
         </div>
+        <nav class="mode-switch" aria-label="Pattern tools">
+            <button class="mode-btn active" type="button" data-mode="mosaic">
+                <span class="mode-mark rgb-mark"></span>
+                RGB Mosaic
+            </button>
+            <button class="mode-btn" type="button" data-mode="sine">
+                <span class="mode-mark cmyk-mark"></span>
+                CMYK Sine
+            </button>
+        </nav>
     </header>
 
+    <main class="tool-view active" id="view-mosaic">
     <div class="layout">
 
         <div class="sidebar">
@@ -169,6 +180,109 @@
 
         </div>
     </div>
+    </main>
+
+    <main class="tool-view" id="view-sine">
+    <div class="layout">
+        <div class="sidebar">
+            <div class="panel">
+                <div class="panel-title">01 - Source Image</div>
+                <div class="main-drop" id="sine-drop">
+                    <input type="file" id="sine-input-main" accept="image/*" />
+                    <div class="main-drop-inner" id="sine-drop-inner">
+                        <span class="icon">~</span>
+                        <p>drop image here<br />or click to browse</p>
+                    </div>
+                    <div class="change-hint">click to change</div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">02 - Grid</div>
+                <div class="slider-block">
+                    <label>Bin size <span><span class="val" id="sine-v-bin">8</span>px</span></label>
+                    <input type="range" id="sine-bin-size" min="1" max="32" value="8" step="1" />
+                    <div class="info" id="sine-info-grid">load an image to preview grid</div>
+                </div>
+                <div class="slider-block">
+                    <label>Px per cell <span><span class="val" id="sine-v-px">40</span>px</span></label>
+                    <input type="range" id="sine-px-per-cell" min="8" max="96" value="40" step="2" />
+                    <div class="info" id="sine-info-output">output estimate appears here</div>
+                </div>
+                <div class="slider-block">
+                    <label>Supersample <span><span class="val" id="sine-v-super">2</span>x</span></label>
+                    <input type="range" id="sine-supersample" min="1" max="3" value="2" step="1" />
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">03 - Wave</div>
+                <div class="slider-block">
+                    <label>Cycles per cell <span class="val" id="sine-v-freq">7.0</span></label>
+                    <input type="range" id="sine-freq" min="1" max="12" value="7" step="0.1" />
+                </div>
+                <div class="slider-block">
+                    <label>Amplitude scale <span class="val" id="sine-v-amp">0.9</span></label>
+                    <input type="range" id="sine-amp-scale" min="0" max="2" value="0.9" step="0.05" />
+                </div>
+                <div class="slider-block">
+                    <label>Amplitude multiplier <span class="val" id="sine-v-ampm">1.0</span></label>
+                    <input type="range" id="sine-amp-mult" min="0.1" max="3" value="1" step="0.05" />
+                </div>
+                <div class="slider-block">
+                    <label>Samples per cell <span class="val" id="sine-v-samples">auto</span></label>
+                    <input type="range" id="sine-samples" min="0" max="96" value="0" step="1" />
+                    <div class="info">0 uses adaptive sampling</div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">04 - Ink</div>
+                <div class="slider-block cmy-slider">
+                    <label>CMY line width <span class="val" id="sine-v-cmy">auto</span></label>
+                    <input type="range" id="sine-cmy-width" min="0" max="16" value="0" step="1" />
+                </div>
+                <div class="slider-block k-slider">
+                    <label>K line width <span><span class="val" id="sine-v-k">1</span>px</span></label>
+                    <input type="range" id="sine-k-width" min="1" max="8" value="1" step="1" />
+                </div>
+            </div>
+        </div>
+
+        <div class="main-col">
+            <div class="panel">
+                <div class="panel-title">05 - Generate</div>
+                <div class="readiness">
+                    <div class="readiness-item" id="sine-ri-main">
+                        <span class="status-dot" id="sine-sd-main"></span>Source image
+                    </div>
+                </div>
+                <div class="progress-wrap" id="sine-progress-wrap">
+                    <div class="progress-track">
+                        <div class="progress-fill cmyk-fill" id="sine-progress-fill"></div>
+                    </div>
+                    <div class="progress-text" id="sine-progress-text">-</div>
+                </div>
+                <button class="btn-generate" id="sine-btn-generate" disabled>
+                    Render CMYK Sine
+                </button>
+                <button class="btn-stop" id="sine-btn-stop">■ Stop Rendering</button>
+            </div>
+
+            <div class="panel output-panel" id="sine-output-panel">
+                <div class="panel-title">06 - Result</div>
+                <div class="output-meta" id="sine-output-meta">-</div>
+                <div class="output-wrapper hidden" id="sine-output-wrapper">
+                    <canvas id="sine-output-canvas"></canvas>
+                    <div class="render-overlay" id="sine-render-overlay"></div>
+                </div>
+                <button class="btn-download hidden" id="sine-btn-download">
+                    ↓ Download PNG
+                </button>
+            </div>
+        </div>
+    </div>
+    </main>
 
     <script type="module" src="js/app.js"></script>
 </body>
