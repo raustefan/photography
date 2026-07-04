@@ -121,32 +121,47 @@ function clampBinSize(value, min, max) {
     return Math.max(min, Math.min(max, value));
 }
 
-function buildWavePoints(channel, coords, settings, renderPxPerCell, samplesPerCell, phaseOffset) {
-    const points = [];
+function buildWavePoints(cmyk, gridW, gridH, settings, renderPxPerCell, samplesPerCell, phaseOffset, channelIndex) {
+    const lines = [];
     const freq = settings.cyclesPerCell;
     const totalAmplitude = settings.amplitude;
+    const edgeTaperWidth = 0.08; // Taper the amplitude over the first and last 8% of each line to soften edges
 
-    for (let i = 0; i < coords.length; i++) {
-        const [row, col] = coords[i];
-        const goingRight = row % 2 === 0;
-        const current = channel[i];
-        const next = channel[Math.min(i + 1, channel.length - 1)];
+    for (let row = 0; row < gridH; row++) {
+        const linePoints = [];
+        for (let col = 0; col < gridW; col++) {
+            const currentIdx = (row * gridW + col) * 4 + channelIndex;
+            const nextIdx = (row * gridW + Math.min(col + 1, gridW - 1)) * 4 + channelIndex;
+            const current = cmyk[currentIdx];
+            const next = cmyk[nextIdx];
 
-        for (let s = 0; s < samplesPerCell; s++) {
-            const frac = s / samplesPerCell;
-            const phase = 2 * Math.PI * freq * (i + frac) + phaseOffset;
-            const intensity = current * (1 - frac) + next * frac;
-            const offset = Math.sin(phase) * intensity * totalAmplitude * (renderPxPerCell / 2);
-            const x = (goingRight ? col + frac : col + (1 - frac)) * renderPxPerCell;
-            const y = (row + 0.5) * renderPxPerCell + offset;
-            points.push([x, y]);
+            for (let s = 0; s < samplesPerCell; s++) {
+                const frac = s / samplesPerCell;
+                const phase = 2 * Math.PI * freq * (col + frac) + phaseOffset;
+                const intensity = current * (1 - frac) + next * frac;
+                
+                // Calculate taper factor to soften edges
+                const xProgress = (col + frac) / gridW;
+                let taper = 1.0;
+                if (xProgress < edgeTaperWidth) {
+                    taper = Math.sin((xProgress / edgeTaperWidth) * Math.PI / 2);
+                } else if (xProgress > 1.0 - edgeTaperWidth) {
+                    taper = Math.sin(((1.0 - xProgress) / edgeTaperWidth) * Math.PI / 2);
+                }
+
+                const offset = Math.sin(phase) * intensity * totalAmplitude * (renderPxPerCell / 2) * taper;
+                const x = (col + frac) * renderPxPerCell;
+                const y = (row + 0.5) * renderPxPerCell + offset;
+                linePoints.push([x, y]);
+            }
         }
+        lines.push(linePoints);
     }
 
-    return points;
+    return lines;
 }
 
-function renderInkLayer(points, width, height, lineWidth) {
+function renderInkLayer(lines, width, height, lineWidth) {
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
@@ -156,9 +171,11 @@ function renderInkLayer(points, width, height, lineWidth) {
     ctx.lineCap = 'round';
     ctx.strokeStyle = '#fff';
     ctx.beginPath();
-    points.forEach(([x, y], index) => {
-        if (index === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
+    lines.forEach(linePoints => {
+        linePoints.forEach(([x, y], index) => {
+            if (index === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        });
     });
     ctx.stroke();
     return ctx.getImageData(0, 0, width, height).data;
@@ -276,7 +293,6 @@ export async function runSineRender() {
 
     const binned = binPixels(sourceData, sourceW, sourceH, settings.binSize);
     const cmyk = rgbToCmyk(binned.data, gridW * gridH);
-    const coords = serpentineCoords(gridH, gridW);
     const samples = settings.samplesPerCell ||
         adaptiveSamples(settings.cyclesPerCell, renderPxPerCell);
     const layers = {};
@@ -284,18 +300,15 @@ export async function runSineRender() {
     for (let channelIndex = 0; channelIndex < CHANNELS.length; channelIndex++) {
         if (sineState.stopRequested) return finishStopped();
         const name = CHANNELS[channelIndex];
-        const channel = new Float64Array(gridW * gridH);
-        for (let i = 0; i < channel.length; i++) {
-            const [row, col] = coords[i];
-            channel[i] = cmyk[(row * gridW + col) * 4 + channelIndex];
-        }
         const points = buildWavePoints(
-            channel,
-            coords,
+            cmyk,
+            gridW,
+            gridH,
             settings,
             renderPxPerCell,
             samples,
-            PHASE_OFFSETS[name]
+            PHASE_OFFSETS[name],
+            channelIndex
         );
         const lineWidth = (name === 'K' ? settings.kLineWidth : settings.cmyLineWidth) *
             settings.supersample;
