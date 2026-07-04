@@ -30,6 +30,8 @@ function getSettings() {
     return {
         binSize: value('sine-bin-size'),
         amplitude: value('sine-amp'),
+        amMod: value('sine-am-mod'),
+        fmMod: value('sine-fm-mod'),
         pxPerCell: value('sine-px-per-cell'),
         samplesPerCell: value('sine-samples') || null,
         cmyLineWidth,
@@ -124,11 +126,17 @@ function clampBinSize(value, min, max) {
 
 function buildWavePoints(cmyk, channelIndex, gridW, gridH, settings, renderPxPerCell, samplesPerCell, phaseOffset) {
     const lines = [];
-    const freq = settings.cyclesPerCell;
+    const baseFreq = settings.cyclesPerCell;
     const totalAmplitude = settings.amplitude;
+    const amMod = settings.amMod;
+    const fmMod = settings.fmMod;
+    const cellStep = 1 / samplesPerCell;
+
 
     for (let row = 0; row < gridH; row++) {
         const points = [];
+        let phase = phaseOffset;
+        let prevIntensity = null;
         for (let col = 0; col < gridW; col++) {
             const currentIdx = (row * gridW + col) * 4 + channelIndex;
             const nextIdx = (row * gridW + Math.min(col + 1, gridW - 1)) * 4 + channelIndex;
@@ -137,12 +145,25 @@ function buildWavePoints(cmyk, channelIndex, gridW, gridH, settings, renderPxPer
 
             for (let s = 0; s < samplesPerCell; s++) {
                 const frac = s / samplesPerCell;
-                const phase = 2 * Math.PI * freq * (col + frac) + phaseOffset;
                 const intensity = current * (1 - frac) + next * frac;
-                const offset = Math.sin(phase) * intensity * totalAmplitude * (renderPxPerCell / 2);
+
+
+                // Frequency modulation: blend between constant baseFreq and
+                // intensity-scaled frequency (low ink -> low frequency).
+                const localFreq = baseFreq * (1 - fmMod + fmMod * intensity);
+
+                // Amplitude modulation: blend between constant full amplitude
+                // and intensity-scaled amplitude (current default behavior).
+                const localAmpFactor = 1 - amMod + amMod * intensity;
+
+                const offset =
+                    Math.sin(phase) * localAmpFactor * totalAmplitude * (renderPxPerCell / 2);
                 const x = (col + frac) * renderPxPerCell;
                 const y = (row + 0.5) * renderPxPerCell + offset;
                 points.push([x, y]);
+                // Advance phase by the instantaneous frequency over this step,
+                // so the wave stays continuous under FM.
+                phase += 2 * Math.PI * localFreq * cellStep;
             }
         }
         lines.push(points);
@@ -248,6 +269,8 @@ export function updateSinePreview() {
     const image = sineState.image;
     const settings = getSettings();
     setText('sine-v-bin', settings.binSize);
+    setText('sine-v-am-mod', settings.amMod.toFixed(2));
+    setText('sine-v-fm-mod', settings.fmMod.toFixed(2));
     setText('sine-v-px', settings.pxPerCell);
     setText('sine-v-super', settings.supersample);
     setText('sine-v-amp', settings.amplitude.toFixed(2));

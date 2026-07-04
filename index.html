@@ -30,258 +30,268 @@
     </header>
 
     <main class="tool-view active" id="view-mosaic">
-    <div class="layout">
+        <div class="layout">
 
-        <div class="sidebar">
+            <div class="sidebar">
 
-            <div class="panel">
-                <div class="panel-title">01 — Tile Image Sets</div>
+                <div class="panel">
+                    <div class="panel-title">01 — Tile Image Sets</div>
 
-                <div class="upload-zone" id="zone-r">
-                    <input type="file" id="input-red" accept="image/*" multiple />
-                    <span class="dot dot-r"></span>
-                    <span class="uz-label">RED tiles</span>
-                    <span class="uz-count" id="count-red">no images</span>
+                    <div class="upload-zone" id="zone-r">
+                        <input type="file" id="input-red" accept="image/*" multiple />
+                        <span class="dot dot-r"></span>
+                        <span class="uz-label">RED tiles</span>
+                        <span class="uz-count" id="count-red">no images</span>
+                    </div>
+
+                    <div class="upload-zone" id="zone-g">
+                        <input type="file" id="input-green" accept="image/*" multiple />
+                        <span class="dot dot-g"></span>
+                        <span class="uz-label">GREEN tiles</span>
+                        <span class="uz-count" id="count-green">no images</span>
+                    </div>
+
+                    <div class="upload-zone" id="zone-b">
+                        <input type="file" id="input-blue" accept="image/*" multiple />
+                        <span class="dot dot-b"></span>
+                        <span class="uz-label">BLUE tiles</span>
+                        <span class="uz-count" id="count-blue">no images</span>
+                    </div>
                 </div>
 
-                <div class="upload-zone" id="zone-g">
-                    <input type="file" id="input-green" accept="image/*" multiple />
-                    <span class="dot dot-g"></span>
-                    <span class="uz-label">GREEN tiles</span>
-                    <span class="uz-count" id="count-green">no images</span>
+                <div class="panel">
+                    <div class="panel-title">02 — Source Image</div>
+                    <div class="main-drop" id="main-drop">
+                        <input type="file" id="input-main" accept="image/*" />
+                        <div class="main-drop-inner" id="main-drop-inner">
+                            <span class="icon">↑</span>
+                            <p>drop image here<br />or click to browse</p>
+                        </div>
+                        <div class="change-hint">click to change</div>
+                    </div>
                 </div>
 
-                <div class="upload-zone" id="zone-b">
-                    <input type="file" id="input-blue" accept="image/*" multiple />
-                    <span class="dot dot-b"></span>
-                    <span class="uz-label">BLUE tiles</span>
-                    <span class="uz-count" id="count-blue">no images</span>
+                <div class="panel">
+                    <div class="panel-title">03 — Settings</div>
+
+                    <div class="slider-block">
+                        <label>Pixel size <span class="val" id="v-pixel">100</span>px</label>
+                        <input type="range" id="pixel-size" min="4" max="512" value="100" step="4" />
+                        <div class="info" id="info-pixel">adjust based on source</div>
+                    </div>
+
+                    <div class="slider-block">
+                        <label>Tile size <span class="val" id="v-tile">12</span>px</label>
+                        <input type="range" id="tile-size" min="6" max="48" value="12" step="1" />
+                        <div class="info" id="info-tile">adjust to limit output</div>
+                    </div>
+
+                    <div class="slider-block">
+                        <label>Texture blend <span class="val" id="v-blend">30</span>%</label>
+                        <input type="range" id="blend-texture" min="0" max="100" value="30" step="1" />
+                    </div>
+
+                    <hr class="divider" />
+
+                    <div class="tint-section">
+                        <div class="tint-row tint-r">
+                            <label>Red tint <span class="val" id="v-br">50</span>%</label>
+                            <input type="range" id="boost-red" min="0" max="100" value="50" />
+                        </div>
+                        <div class="tint-row tint-g">
+                            <label>Green tint <span class="val" id="v-bg">50</span>%</label>
+                            <input type="range" id="boost-green" min="0" max="100" value="50" />
+                        </div>
+                        <div class="tint-row tint-b">
+                            <label>Blue tint <span class="val" id="v-bb">50</span>%</label>
+                            <input type="range" id="boost-blue" min="0" max="100" value="50" />
+                        </div>
+                    </div>
                 </div>
+
             </div>
 
-            <div class="panel">
-                <div class="panel-title">02 — Source Image</div>
-                <div class="main-drop" id="main-drop">
-                    <input type="file" id="input-main" accept="image/*" />
-                    <div class="main-drop-inner" id="main-drop-inner">
-                        <span class="icon">↑</span>
-                        <p>drop image here<br />or click to browse</p>
+            <div class="main-col">
+
+                <div class="panel">
+                    <div class="panel-title">04 — Generate</div>
+
+                    <div class="readiness">
+                        <div class="readiness-item" id="ri-red">
+                            <span class="status-dot" id="sd-red"></span>Red tiles
+                        </div>
+                        <div class="readiness-item" id="ri-green">
+                            <span class="status-dot" id="sd-green"></span>Green tiles
+                        </div>
+                        <div class="readiness-item" id="ri-blue">
+                            <span class="status-dot" id="sd-blue"></span>Blue tiles
+                        </div>
+                        <div class="readiness-item" id="ri-main">
+                            <span class="status-dot" id="sd-main"></span>Source image
+                        </div>
                     </div>
-                    <div class="change-hint">click to change</div>
+
+                    <div class="banner-warning" id="banner-dirty">
+                        ⚠ Tile images, tile size, pixel size, or source image
+                        changed — re-run preprocessing before rendering.
+                    </div>
+
+                    <div class="preprocess-status" id="preprocess-status">
+                        Not preprocessed yet.
+                    </div>
+
+                    <div class="progress-wrap preprocess" id="preprocess-progress-wrap">
+                        <div class="progress-track">
+                            <div class="progress-fill" id="preprocess-progress-fill"></div>
+                        </div>
+                        <div class="progress-text" id="preprocess-progress-text">–</div>
+                    </div>
+
+                    <button class="btn-preprocess" id="btn-preprocess" disabled>
+                        ① Preprocess Tiles
+                    </button>
+
+                    <div class="progress-wrap" id="progress-wrap">
+                        <div class="progress-track">
+                            <div class="progress-fill" id="progress-fill"></div>
+                        </div>
+                        <div class="progress-text" id="progress-text">–</div>
+                    </div>
+
+                    <button class="btn-generate" id="btn-generate" disabled>
+                        ② Render Mosaic
+                    </button>
+                    <button class="btn-stop" id="btn-stop">■ Stop Rendering</button>
                 </div>
+
+                <div class="panel output-panel" id="output-panel">
+                    <div class="panel-title">05 — Result</div>
+                    <div class="output-meta" id="output-meta">–</div>
+
+                    <div class="output-wrapper hidden" id="output-wrapper">
+                        <canvas id="output-canvas"></canvas>
+                        <div class="render-overlay" id="render-overlay"></div>
+                    </div>
+
+                    <button class="btn-download hidden" id="btn-download">
+                        ↓ Download PNG
+                    </button>
+                </div>
+
             </div>
-
-            <div class="panel">
-                <div class="panel-title">03 — Settings</div>
-
-                <div class="slider-block">
-                    <label>Pixel size <span class="val" id="v-pixel">100</span>px</label>
-                    <input type="range" id="pixel-size" min="4" max="512" value="100" step="4" />
-                    <div class="info" id="info-pixel">adjust based on source</div>
-                </div>
-
-                <div class="slider-block">
-                    <label>Tile size <span class="val" id="v-tile">12</span>px</label>
-                    <input type="range" id="tile-size" min="6" max="48" value="12" step="1" />
-                    <div class="info" id="info-tile">adjust to limit output</div>
-                </div>
-
-                <div class="slider-block">
-                    <label>Texture blend <span class="val" id="v-blend">30</span>%</label>
-                    <input type="range" id="blend-texture" min="0" max="100" value="30" step="1" />
-                </div>
-
-                <hr class="divider" />
-
-                <div class="tint-section">
-                    <div class="tint-row tint-r">
-                        <label>Red tint <span class="val" id="v-br">50</span>%</label>
-                        <input type="range" id="boost-red" min="0" max="100" value="50" />
-                    </div>
-                    <div class="tint-row tint-g">
-                        <label>Green tint <span class="val" id="v-bg">50</span>%</label>
-                        <input type="range" id="boost-green" min="0" max="100" value="50" />
-                    </div>
-                    <div class="tint-row tint-b">
-                        <label>Blue tint <span class="val" id="v-bb">50</span>%</label>
-                        <input type="range" id="boost-blue" min="0" max="100" value="50" />
-                    </div>
-                </div>
-            </div>
-
         </div>
-
-        <div class="main-col">
-
-            <div class="panel">
-                <div class="panel-title">04 — Generate</div>
-
-                <div class="readiness">
-                    <div class="readiness-item" id="ri-red">
-                        <span class="status-dot" id="sd-red"></span>Red tiles
-                    </div>
-                    <div class="readiness-item" id="ri-green">
-                        <span class="status-dot" id="sd-green"></span>Green tiles
-                    </div>
-                    <div class="readiness-item" id="ri-blue">
-                        <span class="status-dot" id="sd-blue"></span>Blue tiles
-                    </div>
-                    <div class="readiness-item" id="ri-main">
-                        <span class="status-dot" id="sd-main"></span>Source image
-                    </div>
-                </div>
-
-                <div class="banner-warning" id="banner-dirty">
-                    ⚠ Tile images, tile size, pixel size, or source image
-                    changed — re-run preprocessing before rendering.
-                </div>
-
-                <div class="preprocess-status" id="preprocess-status">
-                    Not preprocessed yet.
-                </div>
-
-                <div class="progress-wrap preprocess" id="preprocess-progress-wrap">
-                    <div class="progress-track">
-                        <div class="progress-fill" id="preprocess-progress-fill"></div>
-                    </div>
-                    <div class="progress-text" id="preprocess-progress-text">–</div>
-                </div>
-
-                <button class="btn-preprocess" id="btn-preprocess" disabled>
-                    ① Preprocess Tiles
-                </button>
-
-                <div class="progress-wrap" id="progress-wrap">
-                    <div class="progress-track">
-                        <div class="progress-fill" id="progress-fill"></div>
-                    </div>
-                    <div class="progress-text" id="progress-text">–</div>
-                </div>
-
-                <button class="btn-generate" id="btn-generate" disabled>
-                    ② Render Mosaic
-                </button>
-                <button class="btn-stop" id="btn-stop">■ Stop Rendering</button>
-            </div>
-
-            <div class="panel output-panel" id="output-panel">
-                <div class="panel-title">05 — Result</div>
-                <div class="output-meta" id="output-meta">–</div>
-
-                <div class="output-wrapper hidden" id="output-wrapper">
-                    <canvas id="output-canvas"></canvas>
-                    <div class="render-overlay" id="render-overlay"></div>
-                </div>
-
-                <button class="btn-download hidden" id="btn-download">
-                    ↓ Download PNG
-                </button>
-            </div>
-
-        </div>
-    </div>
     </main>
 
     <main class="tool-view" id="view-sine">
-    <div class="layout">
-        <div class="sidebar">
-            <div class="panel">
-                <div class="panel-title">01 - Source Image</div>
-                <div class="main-drop" id="sine-drop">
-                    <input type="file" id="sine-input-main" accept="image/*" />
-                    <div class="main-drop-inner" id="sine-drop-inner">
-                        <span class="icon">↑</span>
-                        <p>drop image here<br />or click to browse</p>
+        <div class="layout">
+            <div class="sidebar">
+                <div class="panel">
+                    <div class="panel-title">01 - Source Image</div>
+                    <div class="main-drop" id="sine-drop">
+                        <input type="file" id="sine-input-main" accept="image/*" />
+                        <div class="main-drop-inner" id="sine-drop-inner">
+                            <span class="icon">↑</span>
+                            <p>drop image here<br />or click to browse</p>
+                        </div>
+                        <div class="change-hint">click to change</div>
                     </div>
-                    <div class="change-hint">click to change</div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-title">02 - Grid</div>
+                    <div class="slider-block">
+                        <label>Bin size <span><span class="val" id="sine-v-bin">8</span>px</span></label>
+                        <input type="range" id="sine-bin-size" min="1" max="32" value="8" step="1" />
+                        <div class="info" id="sine-info-grid">load an image to preview grid</div>
+                    </div>
+                    <div class="slider-block">
+                        <label>Px per cell <span><span class="val" id="sine-v-px">40</span>px</span></label>
+                        <input type="range" id="sine-px-per-cell" min="8" max="288" value="40" step="2" />
+                        <div class="info" id="sine-info-output">output estimate appears here</div>
+                    </div>
+                    <div class="slider-block">
+                        <label>Supersample <span><span class="val" id="sine-v-super">2</span>x</span></label>
+                        <input type="range" id="sine-supersample" min="1" max="9" value="2" step="1" />
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-title">03 - Wave</div>
+                    <div class="slider-block">
+                        <label>Frequency <span class="val" id="sine-v-freq">2.3</span></label>
+                        <input type="range" id="sine-freq" min="1" max="12" value="2.3" step="0.1" />
+                    </div>
+                    <div class="slider-block">
+                        <label>Amplitude <span class="val" id="sine-v-amp">0.90</span></label>
+                        <input type="range" id="sine-amp" min="0" max="2" value="0.9" step="0.05" />
+                    </div>
+                    <div class="slider-block">
+                        <label>AM depth <span class="val" id="sine-v-am-mod">1.00</span></label>
+                        <input type="range" id="sine-am-mod" min="0" max="1" value="1" step="0.05" />
+                    </div>
+                    <div class="slider-block">
+                        <label>FM depth <span class="val" id="sine-v-fm-mod">0.00</span></label>
+                        <input type="range" id="sine-fm-mod" min="0" max="1" value="0" step="0.05" />
+
+                    </div>
+
+                    <div class="slider-block">
+                        <label>Samples per cell <span class="val" id="sine-v-samples">auto</span></label>
+                        <input type="range" id="sine-samples" min="0" max="96" value="0" step="1" />
+                        <div class="info">0 uses adaptive sampling</div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-title">04 - Ink</div>
+                    <div class="slider-block cmy-slider">
+                        <label>CMY line width <span class="val" id="sine-v-cmy">auto</span></label>
+                        <input type="range" id="sine-cmy-width" min="0" max="16" value="0" step="1" />
+                    </div>
+                    <div class="slider-block k-slider">
+                        <label>K line width <span><span class="val" id="sine-v-k">1</span>px</span></label>
+                        <input type="range" id="sine-k-width" min="1" max="8" value="1" step="1" />
+                    </div>
+                    <div class="slider-block">
+                        <label>Feathering <span><span class="val" id="sine-v-feather">0.25</span>px</span></label>
+                        <input type="range" id="sine-feather" min="0" max="4" value="0.25" step="0.25" />
+                    </div>
                 </div>
             </div>
 
-            <div class="panel">
-                <div class="panel-title">02 - Grid</div>
-                <div class="slider-block">
-                    <label>Bin size <span><span class="val" id="sine-v-bin">8</span>px</span></label>
-                    <input type="range" id="sine-bin-size" min="1" max="32" value="8" step="1" />
-                    <div class="info" id="sine-info-grid">load an image to preview grid</div>
+            <div class="main-col">
+                <div class="panel">
+                    <div class="panel-title">05 - Generate</div>
+                    <div class="readiness">
+                        <div class="readiness-item" id="sine-ri-main">
+                            <span class="status-dot" id="sine-sd-main"></span>Source image
+                        </div>
+                    </div>
+                    <div class="progress-wrap" id="sine-progress-wrap">
+                        <div class="progress-track">
+                            <div class="progress-fill cmyk-fill" id="sine-progress-fill"></div>
+                        </div>
+                        <div class="progress-text" id="sine-progress-text">-</div>
+                    </div>
+                    <button class="btn-generate" id="sine-btn-generate" disabled>
+                        Render CMYK Sine
+                    </button>
+                    <button class="btn-stop" id="sine-btn-stop">■ Stop Rendering</button>
                 </div>
-                <div class="slider-block">
-                    <label>Px per cell <span><span class="val" id="sine-v-px">40</span>px</span></label>
-                    <input type="range" id="sine-px-per-cell" min="8" max="288" value="40" step="2" />
-                    <div class="info" id="sine-info-output">output estimate appears here</div>
-                </div>
-                <div class="slider-block">
-                    <label>Supersample <span><span class="val" id="sine-v-super">2</span>x</span></label>
-                    <input type="range" id="sine-supersample" min="1" max="9" value="2" step="1" />
-                </div>
-            </div>
 
-            <div class="panel">
-                <div class="panel-title">03 - Wave</div>
-                <div class="slider-block">
-                    <label>Frequency <span class="val" id="sine-v-freq">2.3</span></label>
-                    <input type="range" id="sine-freq" min="1" max="12" value="2.3" step="0.1" />
-                </div>
-                <div class="slider-block">
-                    <label>Amplitude <span class="val" id="sine-v-amp">0.90</span></label>
-                    <input type="range" id="sine-amp" min="0" max="2" value="0.9" step="0.05" />
-                </div>
-                <div class="slider-block">
-                    <label>Samples per cell <span class="val" id="sine-v-samples">auto</span></label>
-                    <input type="range" id="sine-samples" min="0" max="96" value="0" step="1" />
-                    <div class="info">0 uses adaptive sampling</div>
-                </div>
-            </div>
-
-            <div class="panel">
-                <div class="panel-title">04 - Ink</div>
-                <div class="slider-block cmy-slider">
-                    <label>CMY line width <span class="val" id="sine-v-cmy">auto</span></label>
-                    <input type="range" id="sine-cmy-width" min="0" max="16" value="0" step="1" />
-                </div>
-                <div class="slider-block k-slider">
-                    <label>K line width <span><span class="val" id="sine-v-k">1</span>px</span></label>
-                    <input type="range" id="sine-k-width" min="1" max="8" value="1" step="1" />
-                </div>
-                <div class="slider-block">
-                    <label>Feathering <span><span class="val" id="sine-v-feather">0.25</span>px</span></label>
-                    <input type="range" id="sine-feather" min="0" max="4" value="0.25" step="0.25" />
+                <div class="panel output-panel" id="sine-output-panel">
+                    <div class="panel-title">06 - Result</div>
+                    <div class="output-meta" id="sine-output-meta">-</div>
+                    <div class="output-wrapper hidden" id="sine-output-wrapper">
+                        <canvas id="sine-output-canvas"></canvas>
+                        <div class="render-overlay" id="sine-render-overlay"></div>
+                    </div>
+                    <button class="btn-download hidden" id="sine-btn-download">
+                        ↓ Download PNG
+                    </button>
                 </div>
             </div>
         </div>
-
-        <div class="main-col">
-            <div class="panel">
-                <div class="panel-title">05 - Generate</div>
-                <div class="readiness">
-                    <div class="readiness-item" id="sine-ri-main">
-                        <span class="status-dot" id="sine-sd-main"></span>Source image
-                    </div>
-                </div>
-                <div class="progress-wrap" id="sine-progress-wrap">
-                    <div class="progress-track">
-                        <div class="progress-fill cmyk-fill" id="sine-progress-fill"></div>
-                    </div>
-                    <div class="progress-text" id="sine-progress-text">-</div>
-                </div>
-                <button class="btn-generate" id="sine-btn-generate" disabled>
-                    Render CMYK Sine
-                </button>
-                <button class="btn-stop" id="sine-btn-stop">■ Stop Rendering</button>
-            </div>
-
-            <div class="panel output-panel" id="sine-output-panel">
-                <div class="panel-title">06 - Result</div>
-                <div class="output-meta" id="sine-output-meta">-</div>
-                <div class="output-wrapper hidden" id="sine-output-wrapper">
-                    <canvas id="sine-output-canvas"></canvas>
-                    <div class="render-overlay" id="sine-render-overlay"></div>
-                </div>
-                <button class="btn-download hidden" id="sine-btn-download">
-                    ↓ Download PNG
-                </button>
-            </div>
-        </div>
-    </div>
     </main>
 
     <script type="module" src="js/app.js"></script>
