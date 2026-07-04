@@ -36,7 +36,7 @@ function getSettings() {
         kLineWidth,
         supersample: value('sine-supersample'),
         cyclesPerCell: value('sine-freq'),
-        feathering: value('sine-feather'),
+        feather: value('sine-feather') || 0,
     };
 }
 
@@ -122,13 +122,13 @@ function clampBinSize(value, min, max) {
     return Math.max(min, Math.min(max, value));
 }
 
-function buildWavePoints(cmyk, gridW, gridH, settings, renderPxPerCell, samplesPerCell, phaseOffset, channelIndex) {
+function buildWavePoints(cmyk, channelIndex, gridW, gridH, settings, renderPxPerCell, samplesPerCell, phaseOffset) {
     const lines = [];
     const freq = settings.cyclesPerCell;
     const totalAmplitude = settings.amplitude;
 
     for (let row = 0; row < gridH; row++) {
-        const linePoints = [];
+        const points = [];
         for (let col = 0; col < gridW; col++) {
             const currentIdx = (row * gridW + col) * 4 + channelIndex;
             const nextIdx = (row * gridW + Math.min(col + 1, gridW - 1)) * 4 + channelIndex;
@@ -142,48 +142,83 @@ function buildWavePoints(cmyk, gridW, gridH, settings, renderPxPerCell, samplesP
                 const offset = Math.sin(phase) * intensity * totalAmplitude * (renderPxPerCell / 2);
                 const x = (col + frac) * renderPxPerCell;
                 const y = (row + 0.5) * renderPxPerCell + offset;
-                linePoints.push([x, y]);
+                points.push([x, y]);
             }
         }
-        lines.push(linePoints);
+        lines.push(points);
     }
 
     return lines;
 }
 
-function renderInkLayer(lines, width, height, lineWidth, feathering) {
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    
-    if (feathering > 0) {
-        ctx.filter = `blur(${feathering}px)`;
-    }
-    
-    ctx.lineWidth = lineWidth;
-    ctx.lineJoin = 'round';
-    ctx.lineCap = 'round';
-    ctx.strokeStyle = '#fff';
-    ctx.beginPath();
-    lines.forEach(linePoints => {
-        linePoints.forEach(([x, y], index) => {
-            if (index === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
+function renderInkLayer(lines, width, height, lineWidth, feather, cmyk, channelIndex, gridW, gridH) {
+    const waveCanvas = document.createElement('canvas');
+    waveCanvas.width = width;
+    waveCanvas.height = height;
+    const waveCtx = waveCanvas.getContext('2d', { willReadFrequently: true });
+
+    waveCtx.lineJoin = 'round';
+    waveCtx.lineCap = 'round';
+    waveCtx.strokeStyle = '#fff';
+
+    // 1. Draw the blurred stroke
+    if (feather > 0) {
+        waveCtx.filter = `blur(${feather}px)`;
+        waveCtx.lineWidth = lineWidth;
+        lines.forEach((points) => {
+            waveCtx.beginPath();
+            points.forEach(([x, y], index) => {
+                if (index === 0) waveCtx.moveTo(x, y);
+                else waveCtx.lineTo(x, y);
+            });
+            waveCtx.stroke();
         });
+    }
+
+    // 2. Draw the solid core on top to ensure the center of the wave is 100% opaque
+    waveCtx.filter = 'none';
+    const coreWidth = feather > 0 ? Math.max(1, lineWidth - feather) : lineWidth;
+    waveCtx.lineWidth = coreWidth;
+    lines.forEach((points) => {
+        waveCtx.beginPath();
+        points.forEach(([x, y], index) => {
+            if (index === 0) waveCtx.moveTo(x, y);
+            else waveCtx.lineTo(x, y);
+        });
+        waveCtx.stroke();
     });
-    ctx.stroke();
-    return ctx.getImageData(0, 0, width, height).data;
+
+    waveCtx.filter = 'none';
+
+    // Create a gridW x gridH intensity map using the channel values
+    const intensityMapData = new ImageData(gridW, gridH);
+    for (let i = 0; i < gridW * gridH; i++) {
+        const val = cmyk[i * 4 + channelIndex];
+        intensityMapData.data[i * 4] = 255;
+        intensityMapData.data[i * 4 + 1] = 255;
+        intensityMapData.data[i * 4 + 2] = 255;
+        intensityMapData.data[i * 4 + 3] = Math.round(val * 255);
+    }
+    const intensityCanvas = document.createElement('canvas');
+    intensityCanvas.width = gridW;
+    intensityCanvas.height = gridH;
+    intensityCanvas.getContext('2d').putImageData(intensityMapData, 0, 0);
+
+    // Multiply wave alpha with the interpolated intensity map
+    waveCtx.globalCompositeOperation = 'source-in';
+    waveCtx.drawImage(intensityCanvas, 0, 0, width, height);
+
+    return waveCtx.getImageData(0, 0, width, height).data;
 }
 
 function compositeLayers(layers, width, height) {
     const imageData = new ImageData(width, height);
     const out = imageData.data;
     for (let i = 0; i < width * height; i++) {
-        const c = layers.C ? layers.C[i * 4] / 255 : 0;
-        const m = layers.M ? layers.M[i * 4] / 255 : 0;
-        const y = layers.Y ? layers.Y[i * 4] / 255 : 0;
-        const k = layers.K ? layers.K[i * 4] / 255 : 0;
+        const c = layers.C ? layers.C[i * 4 + 3] / 255 : 0;
+        const m = layers.M ? layers.M[i * 4 + 3] / 255 : 0;
+        const y = layers.Y ? layers.Y[i * 4 + 3] / 255 : 0;
+        const k = layers.K ? layers.K[i * 4 + 3] / 255 : 0;
         out[i * 4] = Math.round(255 * (1 - c) * (1 - k));
         out[i * 4 + 1] = Math.round(255 * (1 - m) * (1 - k));
         out[i * 4 + 2] = Math.round(255 * (1 - y) * (1 - k));
@@ -220,7 +255,7 @@ export function updateSinePreview() {
     setText('sine-v-samples', settings.samplesPerCell ?? 'auto');
     setText('sine-v-cmy', value('sine-cmy-width') || 'auto');
     setText('sine-v-k', settings.kLineWidth);
-    setText('sine-v-feather', settings.feathering);
+    setText('sine-v-feather', settings.feather);
 
     if (!image) return;
 
@@ -296,20 +331,20 @@ export async function runSineRender() {
     for (let channelIndex = 0; channelIndex < CHANNELS.length; channelIndex++) {
         if (sineState.stopRequested) return finishStopped();
         const name = CHANNELS[channelIndex];
-        const points = buildWavePoints(
+        const lines = buildWavePoints(
             cmyk,
+            channelIndex,
             gridW,
             gridH,
             settings,
             renderPxPerCell,
             samples,
-            PHASE_OFFSETS[name],
-            channelIndex
+            PHASE_OFFSETS[name]
         );
         const lineWidth = (name === 'K' ? settings.kLineWidth : settings.cmyLineWidth) *
             settings.supersample;
-        const featheringRadius = settings.feathering * settings.supersample;
-        layers[name] = renderInkLayer(points, canvasW, canvasH, lineWidth, featheringRadius);
+        const feather = settings.feather * settings.supersample;
+        layers[name] = renderInkLayer(lines, canvasW, canvasH, lineWidth, feather, cmyk, channelIndex, gridW, gridH);
 
         // Progressively overlay the rendered layer on top of the output canvas
         const partialResult = compositeLayers(layers, canvasW, canvasH);
