@@ -36,6 +36,7 @@ function getSettings() {
         kLineWidth,
         supersample: value('sine-supersample'),
         cyclesPerCell: value('sine-freq'),
+        feathering: value('sine-feather'),
     };
 }
 
@@ -125,7 +126,6 @@ function buildWavePoints(cmyk, gridW, gridH, settings, renderPxPerCell, samplesP
     const lines = [];
     const freq = settings.cyclesPerCell;
     const totalAmplitude = settings.amplitude;
-    const edgeTaperWidth = 0.08; // Taper the amplitude over the first and last 8% of each line to soften edges
 
     for (let row = 0; row < gridH; row++) {
         const linePoints = [];
@@ -139,17 +139,7 @@ function buildWavePoints(cmyk, gridW, gridH, settings, renderPxPerCell, samplesP
                 const frac = s / samplesPerCell;
                 const phase = 2 * Math.PI * freq * (col + frac) + phaseOffset;
                 const intensity = current * (1 - frac) + next * frac;
-                
-                // Calculate taper factor to soften edges
-                const xProgress = (col + frac) / gridW;
-                let taper = 1.0;
-                if (xProgress < edgeTaperWidth) {
-                    taper = Math.sin((xProgress / edgeTaperWidth) * Math.PI / 2);
-                } else if (xProgress > 1.0 - edgeTaperWidth) {
-                    taper = Math.sin(((1.0 - xProgress) / edgeTaperWidth) * Math.PI / 2);
-                }
-
-                const offset = Math.sin(phase) * intensity * totalAmplitude * (renderPxPerCell / 2) * taper;
+                const offset = Math.sin(phase) * intensity * totalAmplitude * (renderPxPerCell / 2);
                 const x = (col + frac) * renderPxPerCell;
                 const y = (row + 0.5) * renderPxPerCell + offset;
                 linePoints.push([x, y]);
@@ -161,11 +151,16 @@ function buildWavePoints(cmyk, gridW, gridH, settings, renderPxPerCell, samplesP
     return lines;
 }
 
-function renderInkLayer(lines, width, height, lineWidth) {
+function renderInkLayer(lines, width, height, lineWidth, feathering) {
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    
+    if (feathering > 0) {
+        ctx.filter = `blur(${feathering}px)`;
+    }
+    
     ctx.lineWidth = lineWidth;
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
@@ -225,6 +220,7 @@ export function updateSinePreview() {
     setText('sine-v-samples', settings.samplesPerCell ?? 'auto');
     setText('sine-v-cmy', value('sine-cmy-width') || 'auto');
     setText('sine-v-k', settings.kLineWidth);
+    setText('sine-v-feather', settings.feathering);
 
     if (!image) return;
 
@@ -312,7 +308,8 @@ export async function runSineRender() {
         );
         const lineWidth = (name === 'K' ? settings.kLineWidth : settings.cmyLineWidth) *
             settings.supersample;
-        layers[name] = renderInkLayer(points, canvasW, canvasH, lineWidth);
+        const featheringRadius = settings.feathering * settings.supersample;
+        layers[name] = renderInkLayer(points, canvasW, canvasH, lineWidth, featheringRadius);
 
         // Progressively overlay the rendered layer on top of the output canvas
         const partialResult = compositeLayers(layers, canvasW, canvasH);
